@@ -1,0 +1,3 @@
+# Capture The Flag Minecraft Datapack
+
+This is a cool game...
