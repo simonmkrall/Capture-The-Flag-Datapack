@@ -1,0 +1,5 @@
+# macOS
+.DS_Store
+
+# Spyglass / editor datapack cache
+.datapack/
