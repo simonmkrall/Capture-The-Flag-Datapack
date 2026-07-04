@@ -38,11 +38,12 @@ While the overlay is on, players also get a **crossing cue** each time they step
 
 **Rules for a valid area:**
 
-- Walk the corners in order, all the way around one direction — clockwise or counter-clockwise both work, as long as you don't zig-zag or cross your own path.
-- The shape must be **convex** (no inward dents). A rectangle, triangle, hexagon, etc. are all fine; an L-shape or star is not.
-- At least 3 points are required before the area can be closed.
+- Drop at least 3 points that actually enclose an area (points all in a straight line are rejected).
+- The order you drop points in **does not matter**, and you don't have to avoid dents: on close, the area is reduced to the **convex hull** of your points — the smallest convex shape containing them all. Any inward dent is filled in automatically. If some points get absorbed this way, the close message tells you how many were used.
 
-**How detection works:** closing the area turns the corner ring into edge vectors. Each tick, for every player, the pack computes a 2D cross product against each edge; a point inside a convex polygon lies on the same side of every edge, so a player who ends up on both sides of different edges is flagged as outside. All of it is integer scoreboard math on vertex-relative differences, which keeps the numbers small even at large world coordinates. For a plain-language, freshman-math walkthrough, see [docs/boundary-detection.md](docs/boundary-detection.md).
+Because of the hull step, the enforced area is always convex, and it's exactly what the `ShowBounds` overlay draws — so what you see is what's enforced.
+
+**How detection works:** closing the area computes the convex hull of your points and turns that ring into edge vectors. Each tick, for every player, the pack computes a 2D cross product against each edge; a point inside a convex polygon lies on the same side of every edge, so a player who ends up on both sides of different edges is flagged as outside. All of it is integer scoreboard math on vertex-relative differences, which keeps the numbers small even at large world coordinates. For a plain-language, freshman-math walkthrough, see [docs/boundary-detection.md](docs/boundary-detection.md).
 
 Place each flag while standing where the flag should go:
 
@@ -120,7 +121,8 @@ To fully disable the datapack after ending the game, use Minecraft's datapack co
 | `data/capture_the_flag/function/tick.mcfunction` | Main game loop for triggers, boundaries, flags, scoring, and cleanup. |
 | `data/capture_the_flag/function/enforce_boundary.mcfunction` | Runs the per-team polygon check each tick and marks players inside or outside their own territory. |
 | `data/capture_the_flag/function/add_red_point.mcfunction` / `add_blue_point.mcfunction` | Append the player's position as the next boundary corner. |
-| `data/capture_the_flag/function/close_red_poly.mcfunction` / `close_blue_poly.mcfunction` | Turn a team's corner ring into edge vectors and activate its boundary. |
+| `data/capture_the_flag/function/close_red_poly.mcfunction` / `close_blue_poly.mcfunction` | Reduce a team's points to their convex hull, build edge vectors, and activate its boundary. |
+| `data/capture_the_flag/function/hull_compute.mcfunction` (+ `hull_find_start` / `hull_march` / `hull_scan` / `hull_consider` / `hull_take` / `hull_maybe`) | Gift-wrapping convex hull of the walked points, shared by both teams. |
 | `data/capture_the_flag/function/build_red_edges.mcfunction` / `build_blue_edges.mcfunction` | Recursively compute the edge vectors from the vertex list. |
 | `data/capture_the_flag/function/check_red.mcfunction` / `check_blue.mcfunction` / `check_poly_loop.mcfunction` | Point-in-convex-polygon test for a single player. |
 | `data/capture_the_flag/function/undo_red_point.mcfunction` / `clear_red_poly.mcfunction` (and Blue) | Remove the last corner or clear a team's area. |
