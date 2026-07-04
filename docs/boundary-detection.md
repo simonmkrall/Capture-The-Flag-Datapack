@@ -123,7 +123,7 @@ That's the entire algorithm:
 Because a rectangle is just a convex shape with four walls, this handles your old
 rectangular arenas too — they're not a special case anymore.
 
-## Why "convex only"?
+## Why the shape has to be convex
 
 **Convex** means the shape has no dents — no part of the outline caves inward.
 Rectangles, triangles, regular hexagons, and stop-sign shapes are all convex. An
@@ -134,10 +134,36 @@ one side of each wall's line. A dent breaks that promise: you can be genuinely
 inside an L-shaped room while sitting on the "outside" side of a wall that
 belongs to the far leg of the L. So the test would wrongly call you "outside."
 
-That's why setup asks you to walk your border in one steady direction (all
-clockwise or all counter-clockwise) without zig-zagging or crossing your own
-path — doing that naturally produces a convex shape, which is exactly what this
-method needs.
+## The fix: snap to the convex hull at close time
+
+Rather than trust the person to draw a convex shape, the pack **makes** the shape
+convex when you close it. It computes the **convex hull** of the points you
+dropped — the smallest convex shape that still contains all of them. Picture
+stretching a rubber band around your points and letting it snap tight: the
+outline it settles into is the hull.
+
+- If your points already form a convex shape, the hull is exactly that shape —
+  nothing changes.
+- If you drew a dent, the hull ignores the inward point and "fills in" the dent,
+  giving the smallest convex area that covers everything you marked.
+- Points that end up inside the hull, or exactly on one of its edges, are simply
+  dropped — they aren't needed to describe the shape.
+
+Two nice side effects:
+
+1. **Order doesn't matter.** A rubber band around a set of nails settles into the
+   same shape no matter what order you hammered the nails in, so you can drop
+   your corner points in any order.
+2. **What you see is what's enforced.** The `ShowBounds` particle overlay draws
+   the hull's walls — the exact same walls the inside/outside test uses — so the
+   picture can never disagree with the rule.
+
+The pack finds the hull with a method called **gift wrapping**: start at the
+left-most point (definitely a corner), then repeatedly ask "from where I'm
+standing, which point is the furthest to the right?" and walk to it, like
+wrapping a string around the outside of the points until you arrive back at the
+start. Each "furthest to the right" question is answered with the same
+which-side-of-the-line cross product from earlier.
 
 ## How this maps to the datapack files
 
@@ -146,7 +172,8 @@ The math above is spread across a few small functions:
 | File | What it does |
 | --- | --- |
 | `add_red_point` / `add_blue_point` | Records a corner (an X, Z pair) each time you drop a point while walking the border. |
-| `close_red_poly` / `close_blue_poly` | When you finish, kicks off turning the ring of corners into walls. |
+| `close_red_poly` / `close_blue_poly` | When you finish, snaps your points to their convex hull, then turns the resulting ring of corners into walls. |
+| `hull_compute` (+ `hull_find_start` / `hull_march` / `hull_scan` / `hull_consider` / `hull_take` / `hull_maybe`) | The gift-wrapping convex hull described above. |
 | `build_red_edges` / `build_blue_edges` | For each wall, stores its start corner `(A.x, A.z)` and its direction `(dx, dz) = B - A`. This is done **once** at close time, so the per-tick work stays cheap. |
 | `check_red` / `check_blue` | For one player: grabs their `(px, pz)`, then loops over the walls. |
 | `check_poly_loop` | The heart of it: for one wall, computes `cross = dx*(pz - A.z) - dz*(px - A.x)`, then notes whether the sign was positive or negative. |
