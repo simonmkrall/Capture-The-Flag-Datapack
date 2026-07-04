@@ -37,21 +37,39 @@ execute as @a[scores={PlaceBlueFlag=1..},team=Blue] run scoreboard players set @
 tag @a remove carrying_blue_flag
 execute unless entity @a[scores={has_blue_flag=1}] at @e[tag=blue_flag_home,limit=1] as @a[team=Red,distance=..2.5,limit=1,sort=nearest] if score @s health matches 1.. run function capture_the_flag:blue_stolen
 
-# Enable and handle the Blue boundary corner triggers.
-scoreboard players enable @a BCorner1
-execute as @a[scores={BCorner1=1}] run function capture_the_flag:set_blue_corner_1
-execute as @a[scores={BCorner1=1}] run scoreboard players set @s BCorner1 0
-scoreboard players enable @a BCorner2
-execute as @a[scores={BCorner2=1}] run function capture_the_flag:set_blue_corner_2
-execute as @a[scores={BCorner2=1}] run scoreboard players set @s BCorner2 0
+# Enable and handle the Blue boundary polygon triggers.
+scoreboard players enable @a BAddPoint
+execute as @a[scores={BAddPoint=1}] run function capture_the_flag:add_blue_point
+execute as @a[scores={BAddPoint=1}] run scoreboard players set @s BAddPoint 0
+scoreboard players enable @a BClose
+execute as @a[scores={BClose=1}] run function capture_the_flag:close_blue_poly
+execute as @a[scores={BClose=1}] run scoreboard players set @s BClose 0
+scoreboard players enable @a BUndo
+execute as @a[scores={BUndo=1}] run function capture_the_flag:undo_blue_point
+execute as @a[scores={BUndo=1}] run scoreboard players set @s BUndo 0
+scoreboard players enable @a BClear
+execute as @a[scores={BClear=1}] run function capture_the_flag:clear_blue_poly
+execute as @a[scores={BClear=1}] run scoreboard players set @s BClear 0
 
-# Enable and handle the Red boundary corner triggers.
-scoreboard players enable @a RCorner1
-execute as @a[scores={RCorner1=1}] run function capture_the_flag:set_red_corner_1
-execute as @a[scores={RCorner1=1}] run scoreboard players set @s RCorner1 0
-scoreboard players enable @a RCorner2
-execute as @a[scores={RCorner2=1}] run function capture_the_flag:set_red_corner_2
-execute as @a[scores={RCorner2=1}] run scoreboard players set @s RCorner2 0
+# Enable and handle the Red boundary polygon triggers.
+scoreboard players enable @a RAddPoint
+execute as @a[scores={RAddPoint=1}] run function capture_the_flag:add_red_point
+execute as @a[scores={RAddPoint=1}] run scoreboard players set @s RAddPoint 0
+scoreboard players enable @a RClose
+execute as @a[scores={RClose=1}] run function capture_the_flag:close_red_poly
+execute as @a[scores={RClose=1}] run scoreboard players set @s RClose 0
+scoreboard players enable @a RUndo
+execute as @a[scores={RUndo=1}] run function capture_the_flag:undo_red_point
+execute as @a[scores={RUndo=1}] run scoreboard players set @s RUndo 0
+scoreboard players enable @a RClear
+execute as @a[scores={RClear=1}] run function capture_the_flag:clear_red_poly
+execute as @a[scores={RClear=1}] run scoreboard players set @s RClear 0
+
+# Toggle the boundary particle overlay, and redraw it each tick while it is on.
+scoreboard players enable @a ShowBounds
+execute as @a[scores={ShowBounds=1}] run function capture_the_flag:toggle_show_bounds
+execute as @a[scores={ShowBounds=1}] run scoreboard players set @s ShowBounds 0
+execute if score show_bounds ctf matches 1 run function capture_the_flag:visualize_boundary
 
 # Give each player their kit once, or warn them if they already got it.
 scoreboard players enable @a Kit

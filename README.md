@@ -9,26 +9,40 @@ This pack is built for datapack format `101`.
 1. Put this folder in a world's `datapacks` folder.
 2. Run `/reload`, or restart the world/server.
 3. Use `/trigger Info` any time to show the clickable setup guide in chat.
-4. Set both teams' territories by standing at opposite corners of each base area and running the corner triggers.
+4. Set each team's territory by walking its border and dropping a boundary point at every corner, then closing the shape.
 5. Join teams, place flags, get kits, and play.
 
 ## Arena Setup
 
-Territories are rectangular areas defined by two opposite corners. The datapack stores X, Y, and Z when a corner is set, but boundary checks currently use X and Z only.
+Each team's territory is a **convex polygon** with any number of corners (3 or more). You define it by walking the border and dropping a point at each corner, then closing the loop. Boundary checks use X and Z only (height is ignored).
 
-Set the Red territory:
-
-```mcfunction
-/trigger RCorner1
-/trigger RCorner2
-```
-
-Set the Blue territory:
+Walk the Red border and, at each corner, add a point; then close the area:
 
 ```mcfunction
-/trigger BCorner1
-/trigger BCorner2
+/trigger RAddPoint   (repeat at every corner, going around one way)
+/trigger RClose
 ```
+
+Do the same for Blue:
+
+```mcfunction
+/trigger BAddPoint   (repeat at every corner, going around one way)
+/trigger BClose
+```
+
+If you misplace a point, `/trigger RUndo` (or `BUndo`) removes the last one, and `/trigger RClear` (or `BClear`) starts that team's area over. You must re-close an area after editing its points.
+
+To check your work, `/trigger ShowBounds` toggles a particle overlay that traces each closed area — red particles for the Red boundary, blue for the Blue boundary. Run it again to hide the overlay. Only closed areas are drawn, so it doubles as a quick way to confirm a `RClose`/`BClose` actually took.
+
+While the overlay is on, players also get a **crossing cue** each time they step over their own boundary line: a warning note plus a flame/smoke burst when leaving their territory, and a bright bell plus sparkles when returning. The cue only fires while `ShowBounds` is on, so it never interrupts normal play — it's purely a setup/testing aid.
+
+**Rules for a valid area:**
+
+- Walk the corners in order, all the way around one direction — clockwise or counter-clockwise both work, as long as you don't zig-zag or cross your own path.
+- The shape must be **convex** (no inward dents). A rectangle, triangle, hexagon, etc. are all fine; an L-shape or star is not.
+- At least 3 points are required before the area can be closed.
+
+**How detection works:** closing the area turns the corner ring into edge vectors. Each tick, for every player, the pack computes a 2D cross product against each edge; a point inside a convex polygon lies on the same side of every edge, so a player who ends up on both sides of different edges is flagged as outside. All of it is integer scoreboard math on vertex-relative differences, which keeps the numbers small even at large world coordinates. For a plain-language, freshman-math walkthrough, see [docs/boundary-detection.md](docs/boundary-detection.md).
 
 Place each flag while standing where the flag should go:
 
@@ -104,7 +118,14 @@ To fully disable the datapack after ending the game, use Minecraft's datapack co
 | `data/minecraft/tags/function/tick.json` | Runs `capture_the_flag:tick` every tick. |
 | `data/capture_the_flag/function/load.mcfunction` | Creates objectives, teams, triggers, sidebar scores, gamerules, and setup chat. |
 | `data/capture_the_flag/function/tick.mcfunction` | Main game loop for triggers, boundaries, flags, scoring, and cleanup. |
-| `data/capture_the_flag/function/enforce_boundary.mcfunction` | Calculates territory bounds and marks players inside or outside their own territory. |
+| `data/capture_the_flag/function/enforce_boundary.mcfunction` | Runs the per-team polygon check each tick and marks players inside or outside their own territory. |
+| `data/capture_the_flag/function/add_red_point.mcfunction` / `add_blue_point.mcfunction` | Append the player's position as the next boundary corner. |
+| `data/capture_the_flag/function/close_red_poly.mcfunction` / `close_blue_poly.mcfunction` | Turn a team's corner ring into edge vectors and activate its boundary. |
+| `data/capture_the_flag/function/build_red_edges.mcfunction` / `build_blue_edges.mcfunction` | Recursively compute the edge vectors from the vertex list. |
+| `data/capture_the_flag/function/check_red.mcfunction` / `check_blue.mcfunction` / `check_poly_loop.mcfunction` | Point-in-convex-polygon test for a single player. |
+| `data/capture_the_flag/function/undo_red_point.mcfunction` / `clear_red_poly.mcfunction` (and Blue) | Remove the last corner or clear a team's area. |
+| `data/capture_the_flag/function/visualize_boundary.mcfunction` (+ `draw_*` / `draw_particle_*`) | Trace each closed boundary with colored particles while the `ShowBounds` overlay is on. |
+| `data/capture_the_flag/function/boundary_crossed.mcfunction` (+ `boundary_cross_out` / `boundary_cross_in`) | Sound/particle cue when a player crosses their boundary line, only while `ShowBounds` is on. |
 | `data/capture_the_flag/function/check_flags.mcfunction` | Handles flag pickup, capture checks, and carrier glow. |
 | `data/capture_the_flag/function/kit.mcfunction` | Gives the standard player kit. |
 | `data/capture_the_flag/function/disable.mcfunction` | Ends the game and removes active CTF state. |
@@ -112,7 +133,8 @@ To fully disable the datapack after ending the game, use Minecraft's datapack co
 ## Development Notes
 
 - Commands are namespaced under `capture_the_flag`.
-- Shared datapack values are stored in the `ctf` scoreboard objective.
+- Shared datapack values (including boundary math scratch scores and the `red_closed` / `blue_closed` flags) are stored as holders in the `ctf` scoreboard objective.
+- Boundary polygons live in command storage `capture_the_flag:poly` as `red_verts` / `blue_verts` (corner lists) and `red_edges` / `blue_edges` (precomputed edge vectors). They reset on every load.
 - Trigger objectives are re-enabled every tick so players can use `/trigger` commands repeatedly.
 - Flag home positions are stored as marker entities tagged `red_flag_home` and `blue_flag_home`.
 - Team scores are fake players named `Red` and `Blue` in the `Points` objective.
