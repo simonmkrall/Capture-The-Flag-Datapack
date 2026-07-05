@@ -90,6 +90,11 @@ scoreboard players enable @a LeaveTeam
 execute as @a[scores={LeaveTeam=1}] run function capture_the_flag:team_leave
 execute as @a[scores={LeaveTeam=1}] run scoreboard players set @s LeaveTeam 0
 
+# Let anyone announce the match start.
+scoreboard players enable @a Start_Game
+execute as @a[scores={Start_Game=1}] run function capture_the_flag:start_game
+execute as @a[scores={Start_Game=1}] run scoreboard players set @s Start_Game 0
+
 # Remove glowing from players who are not currently marked as carrying either flag.
 execute as @a[scores={has_red_flag=0,has_blue_flag=0}] run effect clear @s glowing
 

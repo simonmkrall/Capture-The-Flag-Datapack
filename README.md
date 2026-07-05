@@ -10,7 +10,7 @@ This pack is built for datapack format `101`.
 2. Run `/reload`, or restart the world/server.
 3. Use `/trigger Info` any time to show the clickable setup guide in chat.
 4. Set each team's territory by walking its border and dropping a boundary point at every corner, then closing the shape.
-5. Join teams, place flags, get kits, and play.
+5. Join teams, place flags, get kits, then run `/trigger Start_Game` to announce the match start.
 
 ## Arena Setup
 
@@ -54,6 +54,14 @@ Place each flag while standing where the flag should go:
 
 Only Red players can place the Red flag, and only Blue players can place the Blue flag.
 
+When both teams are ready, start the match:
+
+```mcfunction
+/trigger Start_Game
+```
+
+This announces the start of the game to everyone online.
+
 ## Player Commands
 
 | Command | What it does |
@@ -65,6 +73,7 @@ Only Red players can place the Red flag, and only Blue players can place the Blu
 | `/trigger Kit` | Gives the standard kit. This clears the player's inventory first. |
 | `/trigger PlaceRedFlag` | Places or moves the Red flag at the player's location. |
 | `/trigger PlaceBlueFlag` | Places or moves the Blue flag at the player's location. |
+| `/trigger Start_Game` | Announces that the match has started. |
 
 ## Kit
 
@@ -130,6 +139,7 @@ To fully disable the datapack after ending the game, use Minecraft's datapack co
 | `data/capture_the_flag/function/boundary_crossed.mcfunction` (+ `boundary_cross_out` / `boundary_cross_in`) | Sound/particle cue when a player crosses their boundary line, only while `ShowBounds` is on. |
 | `data/capture_the_flag/function/check_flags.mcfunction` | Handles flag pickup, capture checks, and carrier glow. |
 | `data/capture_the_flag/function/kit.mcfunction` | Gives the standard player kit. |
+| `data/capture_the_flag/function/start_game.mcfunction` | Marks the game as started and broadcasts the start message. |
 | `data/capture_the_flag/function/disable.mcfunction` | Ends the game and removes active CTF state. |
 
 ## Development Notes
